@@ -1,5 +1,7 @@
 # HIN Client Flake
 
+![ci](https://github.com/christianharke/hinclient-flake/actions/workflows/ci.yml/badge.svg)
+
 The HIN Client is the access software for easy and secure access to the [HIN
 platform](https://www.hin.ch/). This software is installed on the workstations and thus enables HIN
 participants to securely access HIN protected web applications and the HIN email services.

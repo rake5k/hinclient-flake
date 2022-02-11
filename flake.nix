@@ -24,6 +24,7 @@
           pkgs = import nixpkgs {
             inherit system;
             config = { allowUnfree = true; };
+            overlays = [ overlay ];
           };
         in
         rec {
@@ -37,12 +38,7 @@
           defaultPackage = packages.${name};
 
           checks = {
-            build = (
-              import nixpkgs {
-                inherit system;
-                overlays = [ overlay ];
-              }
-            ).${name};
+            build = pkgs.${name};
 
             pre-commit-check = pre-commit-hooks.lib.${system}.run {
               src = ./.;

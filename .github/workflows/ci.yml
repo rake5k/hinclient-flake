@@ -21,7 +21,10 @@ jobs:
         nix-command:
           - flake check
           - eval .#apps.$_system.hinclient.program
-          - develop
+
+        include:
+          - nix-command: develop
+            system: x86_64
 
     steps:
       - name: Checkout repository

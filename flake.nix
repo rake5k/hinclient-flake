@@ -14,7 +14,7 @@
       hinclient = import ./default.nix;
 
       overlay = final: prev: {
-        ${name} = final.callPackage hinclient { };
+        "${name}" = final.callPackage hinclient { };
       };
     in
     flake-utils.lib.eachSystem
@@ -29,27 +29,30 @@
         in
         rec {
 
-          apps.${name} = flake-utils.lib.mkApp { drv = packages.${name}; };
+          apps."${name}" = flake-utils.lib.mkApp { drv = packages."${name}"; };
 
-          defaultApp = apps.${name};
+          defaultApp = apps."${name}";
 
-          packages.${name} = pkgs.callPackage hinclient { };
+          packages."${name}" = pkgs.callPackage hinclient { };
 
-          defaultPackage = packages.${name};
+          defaultPackage = packages."${name}";
 
           checks = {
-            build = pkgs.${name};
+            build = pkgs."${name}";
 
-            pre-commit-check = pre-commit-hooks.lib.${system}.run {
+            pre-commit-check = pre-commit-hooks.lib."${system}".run {
               src = ./.;
-              hooks.nixpkgs-fmt.enable = true;
+              hooks = {
+                nixpkgs-fmt.enable = true;
+                statix.enable = true;
+              };
             };
           };
 
-          nixosModule = ({ ... }: {
+          nixosModule = _: {
             nixpkgs.overlays = [ overlay ];
             imports = [ ./nixos-module.nix ];
-          });
+          };
 
           devShell = pkgs.mkShell {
             inherit name;
@@ -60,14 +63,15 @@
               lolcat
 
               nixpkgs-fmt
+              statix
 
               jdk8
-              packages.${name}
+              packages."${name}"
             ];
 
             shellHook = ''
               figlet ${name} | lolcat --freq 0.5
-              ${(checks.pre-commit-check).shellHook}
+              ${checks.pre-commit-check.shellHook}
             '';
           };
         }) // {

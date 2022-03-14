@@ -1,6 +1,6 @@
 # HIN Client Flake
 
-![ci](https://github.com/christianharke/hinclient-flake/actions/workflows/ci.yml/badge.svg)
+[![Build and Test][ci-badge]][ci]
 
 The HIN Client is the access software for easy and secure access to the [HIN
 platform](https://www.hin.ch/). This software is installed on the workstations and thus enables HIN
@@ -126,4 +126,7 @@ optional `nixosModule`, which just needs to be registered in the `nixosConfigura
 
 After a `nixos-rebuild switch`, there will be a systemD service which can be started via `systemctl
 start hinclient.service`.
+
+[ci]: https://github.com/christianharke/hinclient-flake/actions/workflows/ci.yml
+[ci-badge]: https://github.com/christianharke/hinclient-flake/actions/workflows/ci.yml/badge.svg
 

@@ -19,7 +19,7 @@
       hinclient = import ./default.nix;
 
       # System types to support.
-      supportedSystems = [ "x86_64-linux" "i686-linux" "aarch64-linux" ];
+      supportedSystems = [ "x86_64-linux" ];
 
       # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;

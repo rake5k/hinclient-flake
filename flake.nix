@@ -4,68 +4,82 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-21.11";
 
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix?rev=6799201bec19b753a4ac305a53d34371e497941e";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
       };
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, pre-commit-hooks }:
+  outputs = { self, nixpkgs, pre-commit-hooks }:
     let
       name = "hinclient";
 
       hinclient = import ./default.nix;
 
-      overlay = final: prev: {
-        "${name}" = final.callPackage hinclient { };
-      };
+      # System types to support.
+      supportedSystems = [ "x86_64-linux" "i686-linux" "aarch64-linux" ];
+
+      # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+
+      # Nixpkgs instantiated for supported system types.
+      nixpkgsFor = forAllSystems (system: import nixpkgs {
+        inherit system;
+        config = { allowUnfree = true; };
+      });
     in
-    flake-utils.lib.eachSystem
-      [ "aarch64-linux" "i686-linux" "x86_64-linux" ]
-      (system:
+    {
+
+      apps = forAllSystems (system: {
+        "${name}" = {
+          type = "app";
+          program = "${self.packages.${system}.${name}}/bin/hinclient";
+        };
+        default = self.apps.${system}.${name};
+      });
+
+      packages = forAllSystems (system:
         let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = { allowUnfree = true; };
-            overlays = [ overlay ];
-          };
+          pkgs = nixpkgsFor.${system};
         in
-        rec {
+        {
+          "${name}" = pkgs.callPackage hinclient { };
+          default = self.packages.${system}.${name};
+        });
 
-          apps."${name}" = flake-utils.lib.mkApp { drv = packages."${name}"; };
+      overlays.default = final: prev: {
+        "${name}" = self.packages.${prev.system}.default;
+      };
 
-          defaultApp = apps."${name}";
+      checks = forAllSystems (system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        {
+          build = self.packages.${system}."${name}";
 
-          packages."${name}" = pkgs.callPackage hinclient { };
-
-          defaultPackage = packages."${name}";
-
-          checks = {
-            build = pkgs."${name}";
-
-            pre-commit-check = pre-commit-hooks.lib."${system}".run {
-              src = ./.;
-              hooks = {
-                nixpkgs-fmt.enable = true;
-                statix.enable = true;
-              };
+          pre-commit-check = pre-commit-hooks.lib."${system}".run {
+            src = ./.;
+            hooks = {
+              nixpkgs-fmt.enable = true;
+              statix.enable = true;
             };
           };
+        });
 
-          nixosModule = _: {
-            nixpkgs.overlays = [ overlay ];
-            imports = [ ./nixos-module.nix ];
-          };
+      nixosModules.default = { config, ... }: {
+        nixpkgs.overlays = [ self.overlays.default ];
+        imports = [ ./nixos-module.nix ];
+      };
 
-          devShell = pkgs.mkShell {
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        {
+          default = pkgs.mkShell {
             inherit name;
 
             buildInputs = with pkgs; [
@@ -77,15 +91,14 @@
               statix
 
               jdk8
-              packages."${name}"
+              self.packages.${system}."${name}"
             ];
 
             shellHook = ''
               figlet ${name} | lolcat --freq 0.5
-              ${checks.pre-commit-check.shellHook}
+              ${self.checks.${system}.pre-commit-check.shellHook}
             '';
           };
-        }) // {
-      inherit overlay;
+        });
     };
 }

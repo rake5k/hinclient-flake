@@ -2,10 +2,10 @@
   description = "HIN Client";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     pre-commit-hooks = {
-      url = "github:cachix/pre-commit-hooks.nix?rev=6799201bec19b753a4ac305a53d34371e497941e";
+      url = "github:cachix/pre-commit-hooks.nix";
       inputs = {
         nixpkgs.follows = "nixpkgs";
       };
@@ -33,7 +33,7 @@
     {
 
       apps = forAllSystems (system: {
-        "${name}" = {
+        ${name} = {
           type = "app";
           program = "${self.packages.${system}.${name}}/bin/hinclient";
         };
@@ -45,12 +45,12 @@
           pkgs = nixpkgsFor.${system};
         in
         {
-          "${name}" = pkgs.callPackage hinclient { };
+          ${name} = pkgs.callPackage hinclient { };
           default = self.packages.${system}.${name};
         });
 
       overlays.default = final: prev: {
-        "${name}" = self.packages.${prev.system}.default;
+        ${name} = self.packages.${prev.system}.default;
       };
 
       checks = forAllSystems (system:
@@ -58,9 +58,9 @@
           pkgs = nixpkgsFor.${system};
         in
         {
-          build = self.packages.${system}."${name}";
+          build = self.packages.${system}.${name};
 
-          pre-commit-check = pre-commit-hooks.lib."${system}".run {
+          pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
               nixpkgs-fmt.enable = true;
@@ -91,7 +91,7 @@
               statix
 
               jdk8
-              self.packages.${system}."${name}"
+              self.packages.${system}.${name}
             ];
 
             shellHook = ''

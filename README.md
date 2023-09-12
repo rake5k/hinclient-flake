@@ -1,3 +1,9 @@
+# Deprecation Notice
+
+This repository has been archived due to the deprecation of HIN Client V1.
+
+<hr />
+
 # HIN Client Flake
 
 [![NixOS][nixos-badge]][nixos]
